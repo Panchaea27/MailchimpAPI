@@ -1,5 +1,3 @@
-
-
 import mailchimp_marketing as MailchimpMarketing
 from mailchimp_marketing.api_client import ApiClientError
 from dotenv import load_dotenv
