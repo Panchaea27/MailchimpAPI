@@ -87,7 +87,7 @@ max_attempt = 3
 log_attempt_no = 1
 
 
-############################# MAIN EXTRACTION BLOCK START ##############
+############################# MAIN EXTRACTION BLOCK START ##################################
 
 # loop while attempt count allows to retry extraction if it fails
 while attempt_no <= max_attempt:
