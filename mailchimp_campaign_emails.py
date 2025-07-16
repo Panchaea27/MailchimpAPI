@@ -5,6 +5,7 @@ import os
 import json
 from datetime import datetime
 import time
+from loadtos3 import load_to_s3_and_delete
 
 # defining functions for user date input. will check if correctly formatted
 def is_valid_date(date_str):
@@ -161,6 +162,22 @@ else:
 
 
 
+while True:
+    upload = str(input("Would you like to upload the files to S3 bucket and delete them from the local directory (Y/n) ?"))
+    if upload == 'Y' or upload == 'y':
+        load_dotenv()
+        folder_name = 'data/'
+        bucket_name = os.getenv("BUCKET_NAME")
+        access_key = os.getenv("ACCESS_KEY")
+        secret_key = os.getenv("SECRET_KEY")
+        load_to_s3_and_delete(folder_name,bucket_name,access_key,secret_key)
+        print('files upload & deleted from local machine')
+        break
+    elif upload == 'N' or upload == 'n':
+        print("Files will not be uploaded. Exiting script...")
+        break
+    else:
+        continue
 
 
 
