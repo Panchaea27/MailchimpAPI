@@ -5,6 +5,7 @@ import os
 import json
 from datetime import datetime
 import time
+from loadtos3 import load_to_s3_and_delete
 
 # defining functions for user date input. will check if correctly formatted
 def is_valid_date(date_str):
@@ -87,7 +88,7 @@ max_attempt = 3
 log_attempt_no = 1
 
 
-############################# MAIN EXTRACTION BLOCK START ##############
+############################# MAIN EXTRACTION BLOCK START ##################################
 
 # loop while attempt count allows to retry extraction if it fails
 while attempt_no <= max_attempt:
@@ -158,9 +159,57 @@ else:
         file.write("Extraction completed.")
 
 
+############################ UPLOAD & DELETE ######################
 
+with open(logname,'a') as file:
+        file.write("\n")
+        file.write("--------------UPLOAD TO S3------------")
 
-
+while True:
+    upload = str(input("Would you like to upload the files to S3 bucket (Y/n) ?"))
+    if upload == 'Y' or upload == 'y':
+        with open(logname,'a') as file:
+            file.write("\n")
+            file.write("user said YAS to the s3 upload of the files...")
+        while True:
+            deletefiles = str(input("Would you like the uploaded files to be deleted after upload (Y/n)?"))
+            with open(logname,'a') as file:
+                file.write("\n")
+                file.write("user said YAS to the files being deleted from the local machine after the S3 upload...")
+            if deletefiles in ('Y','y','N','n'):
+                break
+            else:
+                print("It's either Y for yes or N for no....")
+                continue
+    # if upload == 'Y' or upload == 'y':
+        load_dotenv()
+        folder_name = 'data/'
+        bucket_name = os.getenv("BUCKET_NAME")
+        access_key = os.getenv("ACCESS_KEY")
+        secret_key = os.getenv("SECRET_KEY")
+        load_to_s3_and_delete(folder_name,bucket_name,access_key,secret_key,deletefiles)
+        if deletefiles == 'Y' or deletefiles == 'y':
+            print('files uploaded & deleted from local machine')
+            with open(logname,'a') as file:
+                file.write("\n")
+                file.write(f"FILES FROM {folder_name} HAVE BEEN UPLOADED TO S3\n")
+                file.write(f"UPLOADED FILES HAVE BEEN DELETED FROM {folder_name}")
+            break
+        if deletefiles == 'n' or deletefiles == 'N':
+            print(f'files uploaded and kept in the original path: {folder_name}')
+            with open(logname,'a') as file:
+                file.write("\n")
+                file.write(f"FILES FROM {folder_name} HAVE BEEN UPLOADED TO S3\n")
+                file.write(f"UPLOADED FILES HAVE BEEN KEPT IN {folder_name}")
+            break
+    elif upload == 'N' or upload == 'n':
+        with open(logname,'a') as file:
+            file.write("\n")
+            file.write(f"User not interested in S3 upload. Files will be kept locally.\n")
+        print("Files will not be uploaded. Exiting script...")
+        break
+    else:
+        continue
 
 
 
