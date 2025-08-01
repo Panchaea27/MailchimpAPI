@@ -1,6 +1,6 @@
 # Mailchimp Campaign Email Extractor
 
-`mailchimp_campaign_emails.py` is a command-line utility that connects to the [Mailchimp Marketing API](https://mailchimp.com/developer/marketing/api/) to extract campaign metadata and related email activity. The script saves data locally as JSON files, logs all steps, and optionally uploads the results to an AWS S3 bucket using a helper function in `loadtos3.py`.
+`mailchimp_campaign_emails.py` is a script that connects to the [Mailchimp Marketing API](https://mailchimp.com/developer/marketing/api/) to extract campaign metadata and related email activity. The script saves data locally as JSON files, logs all steps, and optionally uploads the results to an AWS S3 bucket using a helper function in `loadtos3.py`.
 
 ## Project Structure
 
