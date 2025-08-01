@@ -1,174 +1,121 @@
-# Mailchimp Data Extraction Script
+# Mailchimp Campaign Email Extractor
 
-A Python script that extracts campaign and email activity data from Mailchimp Marketing API for a specified date range and optionally uploads the data to AWS S3.
+`mailchimp_campaign_emails.py` is a command-line utility that connects to the [Mailchimp Marketing API](https://mailchimp.com/developer/marketing/api/) to extract campaign metadata and related email activity. The script saves data locally as JSON files, logs all steps, and optionally uploads the results to an AWS S3 bucket using a helper function in `loadtos3.py`.
+
+## Project Structure
+
+```
+.
+├── mailchimp_campaign_emails.py       # Main script
+├── loadtos3.py                        # Contains load_to_s3_and_delete()
+├── .env                               # Stores Mailchimp and AWS credentials
+├── requirements.txt                   # Python dependencies
+└── data/
+    ├── log/                           # Run logs
+    ├── campaigns_<timestamp>.json     # Campaign data
+    └── emailact_id_<id>_<timestamp>.json  # Email activity per campaign
+```
 
 ## Features
 
-- Extract campaign data for a custom date range
-- Extract email activity data for each campaign
-- Comprehensive logging of all operations
-- Retry mechanism for API failures
-- Optional S3 upload with local file cleanup
-- Data validation and error handling
+- Interactive CLI prompts for inputting a campaign date range
+- Validates user input for date format and logical range order
+- Extracts campaign metadata and email activity using Mailchimp API
+- Saves output as timestamped JSON files in `data/`
+- Logs all operations, retries, and API errors to a file in `data/log/`
+- Optionally uploads extracted files to S3 and deletes them locally
 
-## Prerequisites
+## Requirements
 
-- Python 3.6+
-- Mailchimp Marketing API account and API key
-- AWS S3 bucket (optional, for upload functionality)
-
-## Installation
-
-1. Clone or download the script files
-2. Install required dependencies:
+All Python dependencies are listed in `requirements.txt`. Install them with:
 
 ```bash
-pip install mailchimp-marketing python-dotenv boto3
+pip install -r requirements.txt
 ```
 
-3. Create a `.env` file in the project root with your credentials:
+## .env Configuration
 
-```env
-API_KEY=your_mailchimp_api_key_here
+The script expects a `.env` file in the root directory with the following keys:
+
+```ini
+API_KEY=your_mailchimp_api_key
 BUCKET_NAME=your_s3_bucket_name
 ACCESS_KEY=your_aws_access_key
 SECRET_KEY=your_aws_secret_key
 ```
 
-## Project Structure
-
-```
-project-root/
-├── main_script.py          # Main extraction script
-├── loadtos3.py            # S3 upload functionality
-├── .env                   # Environment variables (create this)
-├── data/                  # Output directory (created automatically)
-│   ├── log/              # Log files
-│   ├── campaigns_*.json  # Campaign data files
-│   └── emailact_id_*.json # Email activity files
-└── README.md
-```
+These are used for connecting to Mailchimp and optionally uploading to AWS S3.
 
 ## Usage
 
-1. Run the main script:
+Run the script via:
 
 ```bash
-python main_script.py
+python mailchimp_campaign_emails.py
 ```
 
-2. Follow the interactive prompts:
-   - Enter start date (YYYY-MM-DD format)
-   - Enter end date (YYYY-MM-DD format, or leave blank for today)
-   - Choose whether to upload to S3
-   - Choose whether to delete local files after upload
+The script will prompt you to:
 
-## Script Workflow
+1. Enter a **start date** (`YYYY-MM-DD` format)
+2. Optionally enter an **end date** (leave blank to default to today)
+3. Choose whether to **upload files to S3**
+4. Decide whether to **delete local files** after upload
 
-### 1. Date Input & Validation
-
-- Prompts for start and end dates
-- Validates date format (YYYY-MM-DD)
-- Ensures end date is after start date
-- Defaults to current date if end date is blank
-
-### 2. Data Extraction
-
-- Connects to Mailchimp Marketing API
-- Retrieves campaign data for specified date range
-- For each campaign, extracts email activity data
-- Implements retry mechanism (up to 3 attempts) for API failures
-- Saves data as timestamped JSON files
-
-### 3. Logging
-
-- Creates detailed log files in `data/log/` directory
-- Logs all operations, errors, and timestamps
-- Includes extraction attempts and success/failure status
-
-### 4. S3 Upload (Optional)
-
-- Uploads files to organized S3 structure:
-  - Campaigns: `python-mailchimp/campaigns/`
-  - Email Activity: `python-mailchimp/email-activity/`
-- Option to delete local files after successful upload
-
-## Output Files
-
-### Campaign Data
-
-- **Filename**: `campaigns_YYYY-MM-DD_HH-MM-SS.json`
-- **Content**: Complete campaign information for the date range
-
-### Email Activity Data
-
-- **Filename**: `emailact_id_{campaign_id}_YYYY-MM-DD_HH-MM-SS.json`
-- **Content**: Email activity data for each individual campaign
-
-### Log Files
-
-- **Filename**: `Mailchimp_API_log_YYYY-MM-DD_HH-MM-SS.txt`
-- **Content**: Detailed operation logs, errors, and timestamps
-
-## Error Handling
-
-- **API Errors**: Automatic retry with exponential backoff
-- **Date Validation**: Input validation with user-friendly error messages
-- **File Operations**: Comprehensive error logging
-- **S3 Upload**: Error handling for AWS operations
-
-## Environment Variables
-
-| Variable      | Description                 | Required           |
-| ------------- | --------------------------- | ------------------ |
-| `API_KEY`     | Mailchimp Marketing API key | Yes                |
-| `BUCKET_NAME` | AWS S3 bucket name          | Only for S3 upload |
-| `ACCESS_KEY`  | AWS access key ID           | Only for S3 upload |
-| `SECRET_KEY`  | AWS secret access key       | Only for S3 upload |
-
-## S3 Folder Structure
-
-When uploading to S3, files are organized as follows:
+### Example Prompt Interaction
 
 ```
-your-bucket/
-├── python-mailchimp/
-│   ├── campaigns/
-│   │   └── campaigns_YYYY-MM-DD_HH-MM-SS.json
-│   └── email-activity/
-│       └── emailact_id_{campaign_id}_YYYY-MM-DD_HH-MM-SS.json
+Input the since create time date (yyyy-mm-dd format only): 2025-07-01
+Input the before create time date (yyyy-mm-dd format only) Leave blank if until today (exclusive): 2025-08-01
+Would you like to upload the files to S3 bucket (Y/n) ? y
+Would you like the uploaded files to be deleted after upload (Y/n)? y
 ```
 
-## Troubleshooting
+### Input Validation
 
-### Common Issues
+- Dates must follow the `YYYY-MM-DD` format; otherwise, the user is re-prompted.
+- The end date must not be earlier than the start date.
+- If the end date is left blank, it defaults to today’s date.
 
-1. **API Key Error**: Ensure your Mailchimp API key is valid and has proper permissions
-2. **Date Format Error**: Use YYYY-MM-DD format only
-3. **S3 Upload Error**: Check AWS credentials and bucket permissions
-4. **File Not Found**: Ensure the `data/` directory exists (created automatically)
+## Functions
 
-### Rate Limiting
+### Defined in `mailchimp_campaign_emails.py`
 
-The script includes a retry mechanism with delays to handle API rate limits. If you encounter persistent rate limit issues, consider:
+- `is_valid_date(date_str)`  
+  Validates the input date format.
 
-- Reducing the date range
-- Running the script during off-peak hours
-- Contacting Mailchimp support for rate limit increases
+- `date_compare(start_dt, end_dt)`  
+  Ensures the start date is not after the end date.
 
-## Dependencies
+### Imported from `loadtos3.py`
 
-- `mailchimp-marketing`: Official Mailchimp Marketing API library
-- `python-dotenv`: Environment variable management
-- `boto3`: AWS SDK for Python
-- `json`: JSON data handling (built-in)
-- `datetime`: Date/time operations (built-in)
-- `os`: File system operations (built-in)
-- `time`: Time-related functions (built-in)
+- `load_to_s3_and_delete(folder, bucket, access_key, secret_key, delete_flag)`  
+  Uploads all files in the specified folder to the configured S3 bucket, and optionally deletes them from disk afterward.
+
+## Logging
+
+Each run creates a log file in `data/log/` with the following information:
+
+- Script start time
+- Date range used for extraction
+- Mailchimp API results (campaign IDs, filenames)
+- Retry attempts and API errors (if any)
+- Upload and file deletion status
+
+Log filenames follow this format:
+
+```
+Mailchimp_API_log_<timestamp>.txt
+```
+
+## Notes
+
+- The script retries API calls up to 3 times in case of failure.
+- All campaign and email data are saved in timestamped JSON files.
+- No files are overwritten between runs due to unique filenames.
 
 ## License
 
-This script is provided as-is for educational and business purposes. Please ensure compliance with Mailchimp's API terms of service and your organization's data handling policies.
+Unlicensed / Public Domain — do whatever you want with this code. No attribution or credit needed ;)
 
 ## Support
 
